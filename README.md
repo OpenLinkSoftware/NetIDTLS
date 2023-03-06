@@ -10,3 +10,7 @@ By looking-up and matching credentials notarized in an X.509 certificate against
 1. X.509 certificate presented during TLS-handshake
 1. Rather than initialize following successful handshake, a credentials (Publick Key or its SHA1-hash) look-up is performed by de-referencing a hyperlink that denotes the X.509 certificate's subject via the Subject Alternative Name field
 1. TLS session initialized
+
+# Live Links
+
+* [NetIDTLS Live Demo](https://linkeddata.uriburner.com/ods/webid_demo.html)
