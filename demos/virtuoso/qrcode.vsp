@@ -1,0 +1,12 @@
+<?vsp
+    qrimg := null;
+    {
+       declare content, qrcode, qrcode_bytes any;
+       content := "IM CreateImageBlob" (120, 120, 'white', 'jpg');
+       qrcode := "QRcode encodeString8bit" (data);
+       qrcode_bytes := aref_set_0 (qrcode, 0);
+       qrimg := "IM PasteQRcode" (qrcode_bytes, qrcode[1], qrcode[2], 3, 3, 0, 0, cast (content as varchar), length (content));
+       qrimg := encode_base64 (cast (qrimg as varchar));
+       qrimg := replace (qrimg, '\r\n', '');
+    }
+?>

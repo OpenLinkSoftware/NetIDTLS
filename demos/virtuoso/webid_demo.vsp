@@ -1,0 +1,122 @@
+<?vsp
+  declare webid, error, action, hostUrl, url, callback, certificate any;
+
+	webid := get_keyword ('webid', params);
+	error := get_keyword ('error', params);
+	action := get_keyword ('go', params);
+  if (length (webid) or length (error))
+    goto html;
+
+  if (not length (action))
+    goto html;
+
+  declare host varchar;
+  host := null;
+  if (host is null or host = '')
+    host := http_request_header (http_request_header (), 'Host');
+
+  if (is_https_ctx ())
+  {
+    hostUrl := 'https://' || host;
+  }
+  else
+  {
+    hostUrl := 'http://' || host;
+  }
+
+  callback := hostUrl || '/webid/webid_demo.vsp';
+  url := sprintf ('https://%s/webid/webid_verify.vsp?callback=%U', host, callback);
+  if (get_keyword ('expiration', params, '') = 'true')
+    url := url || '&expiration=true';
+
+  http_status_set (302);
+  http_header (sprintf ('Location: %s\r\n', url));
+  return;
+
+html:
+?>
+<html>
+  <head>
+    <title>WebID Verification Demo</title>
+    <style type="text/css">
+      body {
+      	background-color: white;
+      	color: black;
+      	font-size: 10pt;
+      	font-family: Verdana, Helvetica, sans-serif;
+      }
+      ul {
+        font-family: Verdana, Helvetica, sans-serif;
+        list-style-type: none;
+      }
+      #qrcode {
+        float: right;
+        clear: right;
+        margin-right: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>WebID Verification Demo</h1>
+    <?vsp declare qrimg, data, ua any;
+     ua := http_request_header (lines, 'User-Agent');
+     data := sprintf ('http://%{WSHost}s%s', http_path ());
+     ?><?include qrcode.vsp ?><?vsp 
+     if (qrimg is not null and strcasestr (ua, 'Mobile') is null) {
+    ?>
+    <div id="qrcode"><img alt="QRcode image" src="data:image/jpg;base64,<?V qrimg ?>"/></div>
+    <?vsp
+      } ?>
+    <div>
+      This service verifies the Identity of the presented X.509 Certificate's subject using WebID+TLS and NetID+TLS protocols.<br/><br/>
+      This service supports agent (people, organizations, and application/service) Identifiers based on the following URI schemes (more to come): 
+      <ul>
+      	<li>* <b>acct</b>, e.g: <span style="font-size: 80%; color: #1DA237;">acct:ExampleUser@id.example.com</span></li>
+      	<li>* <b>http</b>, e.g: <span style="font-size: 80%; color: #1DA237;">http://id.example.com/person/ExampleUser#this</span></li>
+      	<li>* <b>ldap</b>, e.g: <span style="font-size: 80%; color: #1DA237;">ldap://ldap.example.com/o=An%20Example%5C2C%20Inc.,c=US</span></li>
+      	<li>* <b>mailto</b>, e.g: <span style="font-size: 80%; color: #1DA237;">mailto:ExampleUser@id.example.com</span></li>
+      </ul>
+    </div>
+    <div>
+    	<a href="http://ods.openlinksw.com/wiki/ODS/ODSWebIDIdP">Help</a>
+    </div>
+    <br/>
+    <br/>
+    <div>
+      <form method="get">
+	      <input type="checkbox" value="true" name="expiration" id="expiration" />  <label for="expiration">Check Certificate Expiration</label><br />
+        <input type="submit" name="go" value="Check"/>
+      </form>
+    </div>
+    <?vsp
+      if (length (webid) or length (error))
+      {
+    ?>
+      <div>
+      	The return values are:
+  	    <ul>
+          <?vsp
+            if (length (webid))
+            {
+          ?>
+  	      <li>WebID - <?vsp http(sprintf('<a href="%s">%s</a>', webid, webid)); ?></li>
+  	      <li>Timestamp in ISO 8601 format - <?V get_keyword ('ts', params) ?></li>
+	      <li><?vsp http ('md(sha1): ' || {?'sha1'}||'\n'); ?></li>
+	      <li><div>-- have a fun :)</div> 
+		      <div><?vsp http ('emoji: '); ?> <?vsp http (HEX_TO_EMOJI_CODE_UTF8 (replace ({?'sha1'}, ':', ''))); ?></div></li>
+          <?vsp
+            }
+            if (length (error))
+            {
+          ?>
+  	      <li>Error - <?V error ?></li>
+          <?vsp
+            }
+          ?>
+  	    </ul>
+      </div>
+    <?vsp
+      }
+    ?>
+  </body>
+</html>
